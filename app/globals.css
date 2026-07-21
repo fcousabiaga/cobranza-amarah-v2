@@ -1,0 +1,194 @@
+:root {
+  --tinta: #191b22;
+  --tinta-suave: #4b4f5c;
+  --papel: #f5f4f0;
+  --blanco: #ffffff;
+  --linea: #e4e2da;
+  --oro: #b8892e;
+  --oro-claro: #f3ead6;
+  --rojo: #c0392b;
+  --rojo-suave: #faeae7;
+  --ambar: #d9930d;
+  --ambar-suave: #fdf3df;
+  --verde: #2e7d57;
+  --verde-suave: #e8f3ed;
+  --radio: 10px;
+  --sombra: 0 1px 3px rgba(25, 27, 34, 0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: 'Archivo', sans-serif; letter-spacing: -0.01em; }
+
+.mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; border: none; background: none; }
+input, select, textarea {
+  font: inherit; color: var(--tinta);
+  border: 1px solid var(--linea); border-radius: 8px;
+  padding: 10px 12px; background: var(--blanco); width: 100%;
+}
+input:focus, select:focus, textarea:focus, button:focus-visible {
+  outline: 2px solid var(--oro); outline-offset: 1px;
+}
+
+/* ---------- Marco de la app ---------- */
+.marco { min-height: 100dvh; display: flex; flex-direction: column; }
+
+.barra {
+  background: var(--tinta); color: var(--blanco);
+  padding: 0 20px; display: flex; align-items: center; gap: 24px;
+  height: 56px; position: sticky; top: 0; z-index: 40;
+}
+.barra .logo { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: 0.01em; }
+.barra .logo em { color: var(--oro); font-style: normal; }
+.barra nav { display: flex; gap: 4px; flex: 1; }
+.barra nav a {
+  padding: 8px 14px; border-radius: 8px; font-size: 14px; color: #c7c9d1;
+}
+.barra nav a.activa { background: rgba(255,255,255,0.1); color: var(--blanco); }
+.barra .usuario { font-size: 13px; color: #c7c9d1; }
+.barra .salir { color: #c7c9d1; font-size: 13px; padding: 6px 10px; border-radius: 6px; }
+.barra .salir:hover { background: rgba(255,255,255,0.1); }
+
+.contenido { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 24px 20px 90px; }
+
+/* La línea dorada — firma visual de las cartas oficiales de Ureca */
+.linea-oro { height: 3px; background: linear-gradient(90deg, var(--oro), #d9b56a 60%, transparent); border: none; margin: 8px 0 20px; border-radius: 2px; }
+
+.encabezado h1 { font-size: 24px; }
+.encabezado .sub { color: var(--tinta-suave); font-size: 14px; margin-top: 4px; }
+
+/* ---------- Tarjetas y KPIs ---------- */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.kpi {
+  background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio);
+  padding: 16px; box-shadow: var(--sombra);
+}
+.kpi .etiqueta { font-size: 12.5px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: 0.05em; }
+.kpi .valor { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.kpi .detalle { font-size: 13px; color: var(--tinta-suave); margin-top: 4px; }
+
+.tarjeta {
+  background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio);
+  box-shadow: var(--sombra); padding: 18px; margin-bottom: 18px;
+}
+.tarjeta h2 { font-size: 16px; margin-bottom: 12px; }
+
+/* ---------- Tabla de cartera ---------- */
+.tabla { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabla th {
+  text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--tinta-suave); padding: 8px 10px; border-bottom: 2px solid var(--linea);
+}
+.tabla td { padding: 10px; border-bottom: 1px solid var(--linea); vertical-align: middle; }
+.tabla tr.fila:hover { background: var(--oro-claro); cursor: pointer; }
+.tabla .num { text-align: right; font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+.folio-chip {
+  font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px;
+  border-left: 3px solid var(--oro); padding: 2px 8px; background: var(--papel); border-radius: 4px;
+}
+
+.pastilla { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.riesgo-critico { background: var(--rojo-suave); color: var(--rojo); }
+.riesgo-alto { background: #fbe9e2; color: #b3541e; }
+.riesgo-medio { background: var(--ambar-suave); color: var(--ambar); }
+.riesgo-bajo { background: var(--verde-suave); color: var(--verde); }
+.estatus-chip { background: var(--papel); color: var(--tinta-suave); border: 1px solid var(--linea); }
+
+.filtros { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.filtros input { max-width: 280px; }
+.filtros select { max-width: 220px; }
+
+/* ---------- Hoy / Próximas ---------- */
+.item-lista { display: flex; flex-direction: column; gap: 10px; }
+.item {
+  background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio);
+  padding: 14px; display: flex; gap: 12px; align-items: flex-start; box-shadow: var(--sombra);
+}
+.item.vencida { border-left: 4px solid var(--rojo); }
+.item.hoy-item { border-left: 4px solid var(--oro); }
+.item .cuerpo { flex: 1; min-width: 0; }
+.item .desc { font-weight: 500; margin: 4px 0; }
+.item .meta { font-size: 13px; color: var(--tinta-suave); }
+.item .acciones { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+
+.btn {
+  padding: 8px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+  background: var(--tinta); color: var(--blanco);
+}
+.btn.secundario { background: var(--papel); color: var(--tinta); border: 1px solid var(--linea); }
+.btn.peligro { background: var(--rojo-suave); color: var(--rojo); }
+.btn.exito { background: var(--verde-suave); color: var(--verde); }
+.btn.oro { background: var(--oro); color: var(--blanco); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.vacio { text-align: center; color: var(--tinta-suave); padding: 40px 0; }
+.error-msg { background: var(--rojo-suave); color: var(--rojo); padding: 10px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
+
+/* ---------- Login ---------- */
+.login-fondo {
+  min-height: 100dvh; display: grid; place-items: center; background: var(--tinta); padding: 20px;
+}
+.login-caja {
+  width: 100%; max-width: 380px; background: var(--blanco); border-radius: 14px; padding: 32px 28px;
+}
+.login-caja h1 { font-size: 22px; }
+.login-caja .marca { color: var(--tinta-suave); font-size: 13px; margin-top: 2px; }
+.login-caja form { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+
+/* ---------- Modal expediente ---------- */
+.modal-fondo {
+  position: fixed; inset: 0; background: rgba(25,27,34,0.55); z-index: 60;
+  display: grid; place-items: center; padding: 16px;
+}
+.modal {
+  background: var(--blanco); border-radius: 14px; width: 100%; max-width: 760px;
+  max-height: 92dvh; overflow-y: auto; padding: 22px;
+}
+.modal .cerrar { float: right; font-size: 22px; color: var(--tinta-suave); line-height: 1; }
+.datos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 16px; margin: 14px 0; }
+.dato .l { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: 0.04em; }
+.dato .v { font-size: 14.5px; margin-top: 2px; }
+.seccion { border-top: 1px solid var(--linea); padding-top: 14px; margin-top: 14px; }
+.seccion h3 { font-size: 15px; margin-bottom: 10px; }
+.historial { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+.contacto-item { font-size: 13.5px; background: var(--papel); border-radius: 8px; padding: 8px 10px; }
+.contacto-item .quien { color: var(--tinta-suave); font-size: 12.5px; }
+.form-linea { display: flex; gap: 8px; flex-wrap: wrap; }
+.form-linea > * { flex: 1; min-width: 130px; }
+
+/* ---------- Móvil ---------- */
+.tabbar { display: none; }
+@media (max-width: 720px) {
+  .barra nav { display: none; }
+  .contenido { padding: 16px 14px 90px; }
+  .tabla-scroll { overflow-x: auto; }
+  .tabbar {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+    background: var(--tinta); padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+  .tabbar a {
+    flex: 1; text-align: center; padding: 8px 2px; color: #c7c9d1; font-size: 11.5px;
+    border-radius: 8px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .tabbar a .ic { font-size: 18px; }
+  .tabbar a.activa { color: var(--oro); }
+  .item { flex-direction: column; }
+  .item .acciones { width: 100%; }
+  .item .acciones .btn { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
