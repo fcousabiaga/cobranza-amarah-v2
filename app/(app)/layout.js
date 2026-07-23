@@ -10,6 +10,7 @@ const TABS = [
   ['/hoy', 'Hoy', '☀️'],
   ['/proximas', 'Próximas', '🗓️'],
 ];
+const TAB_ADMIN = ['/importar', 'Importar', '📥'];
 
 export default function AppLayout({ children }) {
   const router = useRouter();
@@ -42,12 +43,14 @@ export default function AppLayout({ children }) {
 
   if (!listo) return <div className="vacio" style={{ paddingTop: 80 }}>Cargando…</div>;
 
+  const tabs = perfil?.rol === 'admin' ? [...TABS, TAB_ADMIN] : TABS;
+
   return (
     <div className="marco">
       <header className="barra">
         <span className="logo">Cobranza <em>Amarah</em></span>
         <nav>
-          {TABS.map(([href, nombre]) => (
+          {tabs.map(([href, nombre]) => (
             <Link key={href} href={href} className={ruta.startsWith(href) ? 'activa' : ''}>{nombre}</Link>
           ))}
         </nav>
@@ -56,7 +59,7 @@ export default function AppLayout({ children }) {
       </header>
       <main className="contenido">{children}</main>
       <nav className="tabbar">
-        {TABS.map(([href, nombre, ic]) => (
+        {tabs.map(([href, nombre, ic]) => (
           <Link key={href} href={href} className={ruta.startsWith(href) ? 'activa' : ''}>
             <span className="ic">{ic}</span>{nombre}
           </Link>

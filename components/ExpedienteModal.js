@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { money, fechaCorta, hoyMX, ESTATUS, nombreEstatus } from '@/lib/utils';
+import { generarPreCarta, generarRescision, sumarDias, fechaLarga } from '@/lib/cartas';
 
 export default function ExpedienteModal({ folio, perfil, onCerrar, onCambio }) {
   const [exp, setExp] = useState(null);
@@ -9,6 +10,7 @@ export default function ExpedienteModal({ folio, perfil, onCerrar, onCambio }) {
   const [gestion, setGestion] = useState(null);
   const [contactos, setContactos] = useState([]);
   const [compromisos, setCompromisos] = useState([]);
+  const [pagos, setPagos] = useState([]);
   const [guardando, setGuardando] = useState(false);
 
   // formularios
@@ -19,20 +21,27 @@ export default function ExpedienteModal({ folio, perfil, onCerrar, onCambio }) {
   const [conceptoK, setConceptoK] = useState('');
   const [proxAccion, setProxAccion] = useState('');
   const [proxFecha, setProxFecha] = useState('');
+  const [dialogoRescision, setDialogoRescision] = useState(false);
+  const [fechaContrato, setFechaContrato] = useState('');
+  const [fechaPreCarta, setFechaPreCarta] = useState('');
 
   const cargar = useCallback(async () => {
-    const [e, sv, g, c, k] = await Promise.all([
+    const [e, sv, g, c, k, pg] = await Promise.all([
       supabase.from('expedientes').select('*').eq('folio', folio).maybeSingle(),
       supabase.from('saldos_vencidos').select('*').eq('folio', folio).maybeSingle(),
       supabase.from('gestiones').select('*').eq('folio', folio).maybeSingle(),
       supabase.from('contactos').select('*').eq('folio', folio).order('fecha', { ascending: false }).limit(60),
       supabase.from('compromisos').select('*').eq('folio', folio).order('fecha_compromiso', { ascending: false }),
+      supabase.from('pagos').select('fecha_comprobante, monto_pagado, metodo_pago, concepto')
+        .eq('folio', folio).gt('monto_pagado', 0)
+        .order('fecha_comprobante', { ascending: false }).limit(5),
     ]);
     setExp(e.data);
     setSaldo(sv.data);
     setGestion(g.data);
     setContactos(c.data || []);
     setCompromisos(k.data || []);
+    setPagos(pg?.data || []);
     setProxAccion(g.data?.prox_accion || '');
     setProxFecha(g.data?.prox_fecha || '');
   }, [folio]);
@@ -114,6 +123,75 @@ export default function ExpedienteModal({ folio, perfil, onCerrar, onCambio }) {
   const cliente = exp?.nombre_cliente || saldo?.cliente || '—';
   const telefono = exp?.telefono_cliente || saldo?.telefono;
 
+  // ---------- Cartas PDF ----------
+  const datosCarta = () => ({
+    folio,
+    cliente,
+    unidad: exp?.unidad || saldo?.unidad || '',
+    mt2: exp?.mt2 || saldo?.superficie_m2 || null,
+    parcialidadesVencidas: saldo?.parcialidades_vencidas ?? 0,
+    montoVencido: saldo?.monto_vencido ?? 0,
+    ultimoPago: saldo?.fecha_ultimo_pago || null,
+    fechaHoy: hoyMX(),
+  });
+
+  const subirCarta = async (doc, tipo, nombreArchivo) => {
+    try {
+      const blob = doc.output('blob');
+      const ruta = `${folio}/${nombreArchivo}`;
+      const { error } = await supabase.storage.from('cartas')
+        .upload(ruta, blob, { upsert: true, contentType: 'application/pdf' });
+      await supabase.from('cartas').insert({
+        folio, tipo, generada_por: perfil?.nombre || null,
+        archivo_path: error ? null : ruta,
+      });
+    } catch (e) { console.warn('No se pudo archivar la carta en Storage:', e); }
+  };
+
+  const generarPre = async () => {
+    setGuardando(true);
+    const d = datosCarta();
+    const { doc, fechaLimite } = generarPreCarta(d);
+    const archivo = `Pre-carta_${folio}_${cliente.replace(/[^\wÁÉÍÓÚÑáéíóúñ ]/g, '').replace(/\s+/g, '_')}.pdf`;
+    doc.save(archivo);
+    await subirCarta(doc, 'precancelacion', archivo);
+    await registrarContacto('pre-cancelacion', `Carta pre-cancelación generada. Fecha límite: ${fechaLarga(fechaLimite)}`);
+    await upsertGestion({
+      estatus: 'carta_precancelacion',
+      fecha_carta: d.fechaHoy,
+      prox_accion: 'Verificar pago; si no pagó, enviar carta definitiva de rescisión',
+      prox_fecha: fechaLimite,
+    });
+    await cargar(); onCambio?.();
+    setGuardando(false);
+  };
+
+  const abrirDialogoRescision = () => {
+    setFechaPreCarta(gestion?.fecha_carta || '');
+    setFechaContrato(exp?.fecha_firma_contrato || '');
+    setDialogoRescision(true);
+  };
+
+  const generarRes = async (e) => {
+    e.preventDefault();
+    setGuardando(true);
+    const d = { ...datosCarta(), fechaContrato, fechaPreCarta };
+    const { doc } = generarRescision(d);
+    const archivo = `Rescision_${folio}_${cliente.replace(/[^\wÁÉÍÓÚÑáéíóúñ ]/g, '').replace(/\s+/g, '_')}.pdf`;
+    doc.save(archivo);
+    await subirCarta(doc, 'rescision', archivo);
+    await registrarContacto('rescision', 'Carta de rescisión definitiva generada y enviada');
+    await upsertGestion({
+      estatus: 'rescindido',
+      fecha_aviso_final: d.fechaHoy,
+      prox_accion: 'Dar de baja el expediente en el sistema (rescisión enviada)',
+      prox_fecha: sumarDias(d.fechaHoy, 3),
+    });
+    setDialogoRescision(false);
+    await cargar(); onCambio?.();
+    setGuardando(false);
+  };
+
   return (
     <div className="modal-fondo" onClick={onCerrar}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -165,6 +243,40 @@ export default function ExpedienteModal({ folio, perfil, onCerrar, onCambio }) {
         </div>
 
         <div className="seccion">
+          <h3>Generar carta (PDF)</h3>
+          <div className="form-linea">
+            <button className="btn secundario" disabled={guardando} onClick={generarPre} type="button">
+              📄 Carta pre-cancelación
+            </button>
+            <button className="btn peligro" disabled={guardando} onClick={abrirDialogoRescision} type="button">
+              ⚫ Carta rescisión definitiva
+            </button>
+          </div>
+          {gestion?.fecha_carta && (
+            <div style={{ fontSize: 13, color: 'var(--tinta-suave)', marginTop: 6 }}>
+              Pre-carta enviada el {fechaCorta(gestion.fecha_carta)}
+            </div>
+          )}
+          {dialogoRescision && (
+            <form onSubmit={generarRes} style={{ marginTop: 10, background: 'var(--papel)', borderRadius: 8, padding: 12 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 8 }}>Datos para la rescisión</div>
+              <div className="form-linea">
+                <label style={{ fontSize: 12.5 }}>Fecha del contrato
+                  <input type="date" value={fechaContrato} onChange={(e) => setFechaContrato(e.target.value)} required />
+                </label>
+                <label style={{ fontSize: 12.5 }}>Fecha de envío de la pre-carta
+                  <input type="date" value={fechaPreCarta} onChange={(e) => setFechaPreCarta(e.target.value)} required />
+                </label>
+              </div>
+              <div className="form-linea" style={{ marginTop: 8 }}>
+                <button className="btn peligro" disabled={guardando} type="submit">Generar rescisión</button>
+                <button className="btn secundario" type="button" onClick={() => setDialogoRescision(false)}>Cancelar</button>
+              </div>
+            </form>
+          )}
+        </div>
+
+        <div className="seccion">
           <h3>Compromisos de pago</h3>
           {compromisos.length === 0 && <div style={{ fontSize: 14, color: 'var(--tinta-suave)' }}>Sin compromisos registrados.</div>}
           <div className="item-lista">
@@ -201,6 +313,22 @@ export default function ExpedienteModal({ folio, perfil, onCerrar, onCambio }) {
             <input placeholder="Nota (opcional)" value={notaC} onChange={(e) => setNotaC(e.target.value)} />
             <button className="btn" disabled={guardando} type="submit" style={{ flex: '0 0 auto' }}>Guardar contacto</button>
           </form>
+        </div>
+
+        <div className="seccion">
+          <h3>Pagos recientes (CRM)</h3>
+          {pagos.length === 0 && <div style={{ fontSize: 14, color: 'var(--tinta-suave)' }}>Sin pagos registrados en el último corte.</div>}
+          <div className="historial">
+            {pagos.map((p, i) => (
+              <div key={i} className="contacto-item">
+                <b className="mono">{money(p.monto_pagado)}</b> — {fechaCorta(p.fecha_comprobante)}
+                <div className="quien">{p.concepto || ''}{p.metodo_pago ? ` · ${p.metodo_pago}` : ''}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--tinta-suave)', marginTop: 6 }}>
+            Según el último reporte importado del CRM.
+          </div>
         </div>
 
         <div className="seccion">
